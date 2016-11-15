@@ -29,40 +29,66 @@ double precision function k_ss(delta,a,alpha, beta)
 END function k_ss
 
 
-
-double precision function iterate(beta,delta,a,alpha,num_points,initial_guess, policy_funtion)
+function iterate(beta,delta,a,alpha,num_points,initial_guess, policy_funtion,grid_k)
     
     IMPLICIT NONE
-    integer num_points,mid, equally_spaced,i,j
-    double precision beta,delta,a,alpha,k_at_ss,grid_k(num_points), produc
-    double precision initial_guess(num_points),tolerance,error
+    integer num_points,i,j
+    double precision beta,delta,a,alpha,grid_k(num_points), produc
+    double precision initial_guess(num_points),tolerance,error,max_val(num_points)
     double precision policy_funtion(num_points),val_funtion(num_points),utils(num_points)  
     double precision, external :: production_fun,k_ss,utility
+    double precision, dimension(num_points) ::iterate
 
     tolerance=.0001
     error=100
+    print*, "initialized values?"
+    
     
     val_funtion=initial_guess
     
-    do while (error>tolerance)
+    max_val(:)=-100
     
+    
+    print*, "start of do while"
+    
+    do while (error>tolerance)
+        
+        print*, "start of do while"
         do  i=1,num_points
+        
+            print*, "start of do i"
             do  j=1,num_points
+            
+                print*, "start of do j"
                
                 produc= production_fun(grid_k(i),delta,a,alpha)
-                utils(j)= utility(produc-grid_k(j))+beta*val_funtion(j)
-                
-                
+                if (produc-grid_k(j)>0) Then
+                    utils(j)= utility(produc-grid_k(j))+beta*val_funtion(j)
+                else  
+                    utils(j)=-1000000
+                END IF                
+
+        
+                if (utils(j)>max_val(i)) Then
+                    max_val(i)=utils(j)
+                    policy_funtion(i)=grid_k(j)
+                END IF
  
              end  do
             
         end  do
     
+        error=MAXVAL(abs(val_funtion-max_val))
+        
+        val_funtion=max_val
+        max_val(:)=-100
+            
+        
     
      end  do
     
     
-    iterate=0.0
+    iterate=val_funtion
     
 END function iterate
 
@@ -71,11 +97,12 @@ END function iterate
 
 
 
-double precision function value_interation(beta,delta,a,alpha,num_points,initial_guess)
+function value_interation(beta,delta,a,alpha,num_points,initial_guess)
     IMPLICIT NONE
     integer num_points,mid, equally_spaced,i
-    double precision beta,delta,a,alpha,k_at_ss,grid_k(num_points), initial_guess,error  
-    double precision, external :: production_fun,k_ss,utility
+    double precision beta,delta,a,alpha,k_at_ss,grid_k(num_points), initial_guess(num_points),error,val_fun(num_points)  
+    double precision, external :: production_fun,k_ss,utility,iterate
+    double precision, dimension(num_points) ::value_interation
     
     
 
@@ -99,11 +126,13 @@ double precision function value_interation(beta,delta,a,alpha,num_points,initial
         END IF
     end  do
     
-
+    print*, "grid is done"
     
+    val_fun=iterate(beta,delta,a,alpha,num_points,initial_guess, initial_guess,grid_k)
     
+    print*, "after iterate"
     
-    value_interation=0.0
+    value_interation=val_fun
 
 end function value_interation
 
@@ -111,6 +140,33 @@ end function value_interation
 
 program main
 
-    print*, "everything is a okay!"
+    IMPLICIT NONE
+    integer points
+    double precision beta,delta,a,alpha, initial_guess(12),value_function(12)
+!    double precision, ALLOCATABLE :: initial_guess(:)
+!    double precision, ALLOCATABLE :: value_function(:)
+    double precision, external :: value_interation
+
+
+
+    
+    points=12
+    beta=.96
+    delta=1
+    a=1
+    alpha=1.0/3.0
+    
+!    allocate ( initial_guess(points))
+!    allocate ( value_function(points))
+    
+    initial_guess(:)=0.0
+
+    
+    print*, "before value function"
+
+    value_function=value_interation(beta,delta,a,alpha,points,initial_guess)
+    
+    
+    print*, "we got to the end"
 
 end program main
