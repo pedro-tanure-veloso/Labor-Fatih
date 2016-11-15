@@ -20,7 +20,7 @@ END function production_fun
 
 double precision function k_ss(delta,a,alpha, beta)
     IMPLICIT NONE
-    double precision k,delta,a,alpha,ans
+    double precision k,delta,a,alpha,ans, beta
     
     ans=((1.0/(alpha*a))*(1.0/beta-(1-delta)))**(1.0/(alpha-1))
     
@@ -33,9 +33,9 @@ END function k_ss
 double precision function iterate(beta,delta,a,alpha,num_points,initial_guess, policy_funtion)
     
     IMPLICIT NONE
-    integer num_points,mid, equally_spaced,i
+    integer num_points,mid, equally_spaced,i,j
     double precision beta,delta,a,alpha,k_at_ss,grid_k(num_points), produc
-    double precision initial_guess(num_points),tolerance,error,
+    double precision initial_guess(num_points),tolerance,error
     double precision policy_funtion(num_points),val_funtion(num_points),utils(num_points)  
     double precision, external :: production_fun,k_ss,utility
 
@@ -50,14 +50,19 @@ double precision function iterate(beta,delta,a,alpha,num_points,initial_guess, p
             do  j=1,num_points
                
                 produc= production_fun(grid_k(i),delta,a,alpha)
-                utils= utility(produc-grid_k(j))+beta*val_funtion(j)
+                utils(j)= utility(produc-grid_k(j))+beta*val_funtion(j)
+                
+                
  
-            
+             end  do
             
         end  do
     
     
-    end  do
+     end  do
+    
+    
+    iterate=0.0
     
 END function iterate
 
@@ -69,7 +74,7 @@ END function iterate
 double precision function value_interation(beta,delta,a,alpha,num_points,initial_guess)
     IMPLICIT NONE
     integer num_points,mid, equally_spaced,i
-    double precision beta,delta,a,alpha,k_at_ss,grid_k(num_points), initial_guess  
+    double precision beta,delta,a,alpha,k_at_ss,grid_k(num_points), initial_guess,error  
     double precision, external :: production_fun,k_ss,utility
     
     
@@ -77,7 +82,7 @@ double precision function value_interation(beta,delta,a,alpha,num_points,initial
 
     mid=num_points/2+1
     k_at_ss=k_ss(delta,a,alpha, beta)
-    error=10
+    error=10.0
     
     
     
@@ -98,7 +103,7 @@ double precision function value_interation(beta,delta,a,alpha,num_points,initial
     
     
     
-
+    value_interation=0.0
 
 end function value_interation
 
@@ -106,8 +111,6 @@ end function value_interation
 
 program main
 
-    double precision k
-
-    k=testing(5)
+    print*, "everything is a okay!"
 
 end program main
