@@ -29,39 +29,37 @@ double precision function k_ss(delta,a,alpha, beta)
 END function k_ss
 
 
-function iterate(beta,delta,a,alpha,num_points,initial_guess, policy_funtion,grid_k)
+SUBROUTINE iterate(beta,delta,a,alpha,num_points,initial_guess, policy_funtion,grid_k,value_function)
     
     IMPLICIT NONE
     integer num_points,i,j
-    double precision beta,delta,a,alpha,grid_k(num_points), produc
+    double precision beta,delta,a,alpha,grid_k(num_points), produc,value_function(num_points)
     double precision initial_guess(num_points),tolerance,error,max_val(num_points)
     double precision policy_funtion(num_points),val_funtion(num_points),utils(num_points)  
     double precision, external :: production_fun,k_ss,utility
-    double precision, dimension(num_points) ::iterate
+    !double precision, dimension(num_points) ::iterate
 
-    tolerance=.0001
+    tolerance=.01
     error=100
-    print*, "initialized values?"
+   
     
     
     val_funtion=initial_guess
     
-    max_val(:)=-100
-    
-    
-    print*, "start of do while"
+    max_val=-100
     
     do while (error>tolerance)
         
-        print*, "start of do while"
+        
         do  i=1,num_points
         
-            print*, "start of do i"
+        
             do  j=1,num_points
             
-                print*, "start of do j"
+                
                
                 produc= production_fun(grid_k(i),delta,a,alpha)
+
                 if (produc-grid_k(j)>0) Then
                     utils(j)= utility(produc-grid_k(j))+beta*val_funtion(j)
                 else  
@@ -79,44 +77,46 @@ function iterate(beta,delta,a,alpha,num_points,initial_guess, policy_funtion,gri
         end  do
     
         error=MAXVAL(abs(val_funtion-max_val))
-        
+        print*, "error is ", error
         val_funtion=max_val
-        max_val(:)=-100
+        max_val=-100
             
         
     
      end  do
     
+    value_function=val_funtion
     
-    iterate=val_funtion
-    
-END function iterate
+END SUBROUTINE iterate
 
 
 
 
 
 
-function value_interation(beta,delta,a,alpha,num_points,initial_guess)
+SUBROUTINE value_interation(beta,delta,a,alpha,num_points,initial_guess,value_function,policy_function)
     IMPLICIT NONE
-    integer num_points,mid, equally_spaced,i
-    double precision beta,delta,a,alpha,k_at_ss,grid_k(num_points), initial_guess(num_points),error,val_fun(num_points)  
-    double precision, external :: production_fun,k_ss,utility,iterate
-    double precision, dimension(num_points) ::value_interation
+    integer num_points,mid,i
+    double precision beta,delta,a,alpha,k_at_ss,grid_k(num_points), initial_guess(num_points),error
+    double precision equally_spaced,value_function(num_points),policy_function(num_points)
+    double precision, external :: production_fun,k_ss,utility
+   
+   !double precision, dimension(num_points) ::value_interation
     
     
-
 
     mid=num_points/2+1
-    k_at_ss=k_ss(delta,a,alpha, beta)
+    k_at_ss=((1.0/(alpha*a))*(1.0/beta-(1-delta)))**(1.0/(alpha-1))
     error=10.0
     
+ 
     
     
-    equally_spaced=(2*k_at_ss)/(REAL(num_points))
+    equally_spaced=(REAL(2.0*k_at_ss))/(REAL(num_points))
     
+
     grid_k(1)=0
-    
+
     do  i=2,num_points
         
         if (i==mid) Then
@@ -125,16 +125,13 @@ function value_interation(beta,delta,a,alpha,num_points,initial_guess)
             grid_k(i)=grid_k(i-1)+ equally_spaced
         END IF
     end  do
+   
     
-    print*, "grid is done"
+    call iterate(beta,delta,a,alpha,num_points,initial_guess, policy_function,grid_k,value_function)
     
-    val_fun=iterate(beta,delta,a,alpha,num_points,initial_guess, initial_guess,grid_k)
     
-    print*, "after iterate"
-    
-    value_interation=val_fun
 
-end function value_interation
+end SUBROUTINE value_interation
 
 
 
@@ -142,31 +139,35 @@ program main
 
     IMPLICIT NONE
     integer points
-    double precision beta,delta,a,alpha, initial_guess(12),value_function(12)
-!    double precision, ALLOCATABLE :: initial_guess(:)
-!    double precision, ALLOCATABLE :: value_function(:)
-    double precision, external :: value_interation
+    double precision beta,delta,a,alpha
+    !initial_guess(12),value_function(12)
+    double precision, ALLOCATABLE :: initial_guess(:)
+    double precision, ALLOCATABLE :: value_function(:)
+    double precision, ALLOCATABLE :: policy_function(:)
+
 
 
 
     
-    points=12
+    points=11
     beta=.96
-    delta=1
-    a=1
+    delta=.1
+    a=1.0
     alpha=1.0/3.0
     
-!    allocate ( initial_guess(points))
-!    allocate ( value_function(points))
+    allocate ( initial_guess(points))
+    allocate ( value_function(points))
+    allocate ( policy_function(points))
     
-    initial_guess(:)=0.0
+    initial_guess=0.0
 
     
-    print*, "before value function"
 
-    value_function=value_interation(beta,delta,a,alpha,points,initial_guess)
+
+    call value_interation(beta,delta,a,alpha,points,initial_guess,value_function,policy_function)
     
-    
-    print*, "we got to the end"
+    print*, "initial guess is ",initial_guess 
+    print*, "value_function guess is ",value_function
+    print*, "policy_function guess is ",policy_function
 
 end program main
