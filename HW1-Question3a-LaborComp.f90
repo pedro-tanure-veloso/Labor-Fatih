@@ -98,7 +98,7 @@ error=10.0
 
 equally_spaced=(REAL(2.0*k_at_ss))/(REAL(num_points))
 
-grid_k(1)=0
+grid_k(1)=0.001
 
 do  i=2,num_points
 
@@ -124,7 +124,7 @@ k_at_ss=((1.0/(alpha*a))*(1.0/beta-(1-delta)))**(1.0/(alpha-1))
 print*, "steady state level of capital is", k_at_ss
 equally_spaced=(REAL(2.0*k_at_ss))/(REAL(num_points))
 
-grid_k(1)=0
+grid_k(1)=0.001
 
 do  i=2,num_points
 
@@ -155,8 +155,8 @@ program main
 
 IMPLICIT NONE
 integer points
+real :: start, finish
 double precision beta,delta,a,alpha
-!initial_guess(12),value_function(12)
 double precision, ALLOCATABLE :: initial_guess(:)
 double precision, ALLOCATABLE :: value_function(:)
 double precision, ALLOCATABLE :: policy_function(:)
@@ -165,7 +165,7 @@ double precision, ALLOCATABLE :: anal_policy_function(:)
 
 points=11
 beta=.96
-delta=1
+delta=.1
 a=1.0
 alpha=1.0/3.0
 
@@ -177,14 +177,26 @@ allocate ( anal_policy_function(points))
 
 initial_guess=0.0
 
+! Let's starts timing
+call cpu_time(start)
+              
+! Now we do the iterations
 call value_interation(beta,delta,a,alpha,points,initial_guess,value_function,policy_function)
 
+if (delta==1) then
 call analytical(a,alpha,beta,delta,anal_value_function,anal_policy_function,points)
+end if
 
 print*, "initial guess is ",initial_guess
 print*, "value_function is ",value_function
 print*, "policy_function is ",policy_function
+if (delta==1) then
 print*, "analytical_value_function is ",anal_value_function
 print*, "analytical_policy_function is ",anal_policy_function
+end if
+
+call cpu_time(finish)
+print '("Time = ",f6.3," seconds.")',finish-start
+
 
 end program main
