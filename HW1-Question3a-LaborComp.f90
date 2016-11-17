@@ -32,7 +32,7 @@ END function k_ss
 SUBROUTINE iterate(beta,delta,a,alpha,num_points,initial_guess, policy_funtion,grid_k,value_function)
 
     IMPLICIT NONE
-    integer num_points,i,j
+    integer num_points,i,j,n
     double precision beta,delta,a,alpha,grid_k(num_points), produc,value_function(num_points)
     double precision initial_guess(num_points),tolerance,error,max_val(num_points)
     double precision policy_funtion(num_points),val_funtion(num_points),utils(num_points)
@@ -45,6 +45,7 @@ SUBROUTINE iterate(beta,delta,a,alpha,num_points,initial_guess, policy_funtion,g
     val_funtion=initial_guess
 
     max_val=-100
+    n=0
 
 
 do while (error>tolerance)
@@ -76,9 +77,10 @@ do while (error>tolerance)
     print*, "error is ", error
     val_funtion=max_val
     max_val=-100
-
+    n=n+1
+ 
  end  do
-
+print*, "number of iterations", n
 value_function=val_funtion
 
 END SUBROUTINE iterate

@@ -34,7 +34,7 @@ END function k_ss
 SUBROUTINE howard(it,beta,delta,a,alpha,num_points,initial_guess,policy_function,grid_k,value_function)
 
     IMPLICIT NONE
-    integer num_points,i,j,m,it !"it" is the number of iterations that we will have in Howard's improvement algorithm
+    integer num_points,i,j,n,m,it !"it" is the number of iterations that we will have in Howard's improvement algorithm
     double precision beta,delta,a,alpha,grid_k(num_points), produc,value_function(num_points),kp_index(num_points)
     double precision initial_guess(num_points),tolerance,error,v0(num_points),v1(num_points)
     double precision policy_function(num_points),val_funtion(num_points),utils(num_points)
@@ -46,6 +46,7 @@ SUBROUTINE howard(it,beta,delta,a,alpha,num_points,initial_guess,policy_function
     val_funtion = initial_guess
 
     v0 = -100
+    n = 0
 
 
 do while (error>tolerance)
@@ -79,8 +80,9 @@ do while (error>tolerance)
     print*, "error is ", error
     val_funtion = v0
     v0 = -100
+    n = n+1
 end  do
-
+print*, "number of iterations", n
 value_function=val_funtion
 
 END SUBROUTINE howard
