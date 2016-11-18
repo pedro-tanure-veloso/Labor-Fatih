@@ -34,7 +34,7 @@ double precision function util3(c,sigma)
 
 END function util3
 
-! Step 2: interpolaion subroutines
+! Step 2: interpolaion subroutines (these ones come from Numerical Recipes in Fortran 77)
 
 SUBROUTINE polint(xa,ya,n,x,y,dy)
     INTEGER n, NMAX
@@ -166,7 +166,7 @@ SUBROUTINE chebtf(a,b,c,n,func)
     PARAMETER (NMAX=50,PI=3.141592653589793d0)
         ! Chebyshev fit: given a function func, lower and upper limits of the interval [a,b], and
         ! a maximum degree n, this routine computes the n coefficients c_k such that func(x)~~
-        ! [Sum_(k=1)^n c_kT_(k-1)(y)]-c_1/2, where y and x are related by y=(x-.5(b+a))/(.5(b-a)).
+        ! [Sum_(k=1)^n c_kT_(k-1)(y)]-c_1/2, where y and x are related by y=(x-(b+a)/2)/((b-a)/2).
         ! This routine is to be used with moderately large n (e.g., 30 or 50), the array of c's
         ! subsequently to be truncated at the smaller value m such that c_(m+1) and subsequent
         ! elements are negligible.
@@ -186,6 +186,35 @@ SUBROUTINE chebtf(a,b,c,n,func)
         sum = 0.d0
         do k=1,n
             sum=sum+f(k)*cos((PI*(j-1))*((k-0.5d0)/n))
+        end do
+        c(j) = fac*sum
+    end do
+    return
+END
+
+FUNCTION chebev(a,b,c,m,x)
+    INTEGER m
+    REAL chebev,a,b,x,c(m)
+        ! CHebyshev evaluation: All arguments are input. c(1:m) is an array of Chebyshev coefficients,
+        ! the first m elements of c output from chebtf (which must have been called with the same a 
+        ! and b). The Chebyshev polynomial Sum_(k=1)^m c_kT_(k-1)(y)-c_1/2 is evaluated at a point
+        ! y=(x-(b+a)/2)/((b-a)/2), and the result is returned as the function value.
+    INTEGER j
+    REAL d,dd,sv,y,y2
+    
+    if ((x-a)*(x-b) > 0) pause 'x not in range in chebev'
+    d = 0.
+    dd = 0.
+    y = (2.*x-a-b)/(b-a)       ! Change of variable
+    y2 = 2.*y
+    do j=m,2,-1                ! Clenshaw's recurrence
+        sv = d
+        d = y2*d-dd+c(j)
+        dd = sv
+    end do
+    chebev = y*d-dd+0.5*c(1)  ! Last step is different
+    return
+END
 
 program main
 
