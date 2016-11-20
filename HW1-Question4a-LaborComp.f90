@@ -11,15 +11,16 @@ program main
 IMPLICIT none
 integer n,i,factor
 double precision equally_spaced, equally_spacedl, alpha, dif
-double precision, ALLOCATABLE :: x(:),y1(:),y2(:),y3(:),xl(:),yl1(:),yl2(:),yl3(:),int1(:),int2(:),int3(:),dy1(:),yx1(:),yx2(:),yx3(:)
+double precision, ALLOCATABLE :: x(:),y1(:),y2(:),y3(:),xl(:),yl1(:),yl2(:)
+double precision, ALLOCATABLE :: yl3(:),int1(:),int2(:),int3(:),dy1(:),yx1(:),yx2(:),yx3(:)
 double precision, external :: util1, util2, util3
 
 ! Risk aversion parameter
 alpha = 2.
 
 ! size of the grid
-n = 100
-factor = 3
+n = 1000
+factor = 10
 allocate (x(factor*n))
 allocate (y1(factor*n))
 allocate (y2(factor*n))
@@ -73,35 +74,48 @@ do i=1,n
     !print *, 'utility in consumption', xl(i), 'is', yl1(i)
 end do
 
+do i=1,factor*n
+    y3(i) = util3(x(i),alpha)
+    !print *, 'utility in consumption', x(i), 'is', y(i)
+end do
+
+do i=1,n
+    yl3(i) = util3(xl(i),alpha)
+    !print *, 'utility in consumption', xl(i), 'is', yl1(i)
+end do
+
 ! doing the interpolation
 ! log
 call spline(xl,yl1,n,1/xl(1),1/xl(n),yx1)
 call splint(xl,yl1,yx1,n,x,int1)
 
 print *, 'log'
-do i=1,factor*n
-    dif = ABS(int1(i)-y1(i))
-    print *, 'difference between interpolation and real utility is', dif
-end do
+!do i=1,factor*n
+!    dif = ABS(int1(i)-y1(i))
+!    print *, 'difference between interpolation and real utility is', dif
+!end do
+print *, 'maximum difference between interpolation and real utility is', MAXVAL(ABS(int1-y1))
 
 ! sqrt
 call spline(xl,yl2,n,0.5*xl(1)**(-0.5),0.5*xl(n)**(-0.5),yx2)
 call splint(xl,yl2,yx2,n,x,int2)
 
 print *, 'sqrt'
-do i=1,factor*n
-    dif = ABS(int2(i)-y2(i))
-    print *, 'difference between interpolation and real utility is', dif
-end do
+!do i=1,factor*n
+!    dif = ABS(int2(i)-y2(i))
+!    print *, 'difference between interpolation and real utility is', dif
+!end do
+print *, 'maximum difference between interpolation and real utility is', MAXVAL(ABS(int2-y2))
 
 ! crra
 call spline(xl,yl3,n,xl(1)**(-alpha),xl(n)**(-alpha),yx3)
 call splint(xl,yl3,yx3,n,x,int3)
 
 print *, 'crra'
-do i=1,factor*n
-    dif = ABS(int3(i)-y3(i))
-    print *, 'difference between interpolation and real utility is', dif
-end do
+!do i=1,factor*n
+!    dif = ABS(int3(i)-y3(i))
+!    print *, 'difference between interpolation and real utility is', dif
+!end do
+print *, 'maximum difference between interpolation and real utility is', MAXVAL(ABS(int3-y3))
 
 end program main
