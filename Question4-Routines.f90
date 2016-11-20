@@ -30,9 +30,16 @@ double precision function util3(c,sigma)
 
 END function util3
 
-! Step 2: interpolaion subroutines (these ones come from Numerical Recipes in Fortran 77)
+! Step 2: interpolaion subroutines (adapted from Numerical Recipes in Fortran 77)
 
-SUBROUTINE polint(xa,ya,n,x,y,dy)
+double precision function linear_inter(x1,y1,x2,y2,xval) result(yval)
+    double precision ,intent(in) :: x1,y1,x2,y2,xval
+    double precision :: frac
+    frac = ( xval - x1 ) / ( x2 - x1 )
+    yval = y1 + frac * ( y2 - y1 )
+end function linear_inter
+
+SUBROUTINE polint(xa,ya,n,x,y,dy) ! polynomial interpolation - not sure if we need this
     INTEGER n, NMAX
     double precision dy,x,y,xa(n),ya(n)
     PARAMETER (NMAX=10) ! Largest anticipated value of n
