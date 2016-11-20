@@ -119,7 +119,7 @@ print*,"=================================="
         end if
     end  do
     
-    print*, "max error is ",max_error
+    print*, "max error for linear interpolation is ",max_error
     
     
     
