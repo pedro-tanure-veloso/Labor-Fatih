@@ -2,24 +2,27 @@
 ! Here, we will interpolate three types of utility functions using 3 methods: linear, Chebyshev polynomials and cubic splines.
 ! The functions are: log, square root and standard CRRA. We will vary the relative risk aversion coefficient as well.
 
-!INCLUDE 'Question4-Routines.f90'
-
 program main
 
-!use Question4-Routines
-
 IMPLICIT none
-integer n,i,factor
-double precision equally_spaced, equally_spacedl, alpha, dif
-double precision, ALLOCATABLE :: x(:),y1(:),y2(:),y3(:),xl(:),yl1(:),yl2(:)
-double precision, ALLOCATABLE :: yl3(:),int1(:),int2(:),int3(:),dy1(:),yx1(:),yx2(:),yx3(:)
-double precision, external :: util1, util2, util3
+integer n,i,factor,natural,err
+double precision equally_spaced, equally_spacedl, alpha, dif,theta,nat,maxd
+double precision, ALLOCATABLE :: x(:),y1(:),y2(:),y3(:),xl(:),yl1(:),yl2(:),yl3(:)
+double precision, ALLOCATABLE :: int1(:),int2(:),int3(:),dy1(:),yx1(:),yx2(:),yx3(:)
+double precision, external :: util1,util2,util3
+integer, parameter :: out_unit=20
+
+maxd = 0.
+
+! Use natural = 1 if you want natural spline
+natural = 1
+nat = 99e31
 
 ! Risk aversion parameter
 alpha = 2.
 
 ! size of the grid
-n = 1000
+n = 900
 factor = 10
 allocate (x(factor*n))
 allocate (y1(factor*n))
@@ -37,85 +40,107 @@ allocate (int2(factor*n))
 allocate (int3(factor*n))
 allocate (dy1(factor*n))
 
-! equally spaced grid
+! equally-spaced grid
 x(1) = 0.05
-xl(1) = 0.05
 x(factor*n) = 2.
-xl(n) = 2.
 equally_spaced = (x(factor*n)-x(1))/(factor*n)
-equally_spacedl = (xl(n)-xl(1))/n
 
 do  i=2,factor*n-1
     x(i) = x(i-1)+ equally_spaced
 end  do
 
-do i=2,n-1
-    xl(i) = xl(i-1)+ equally_spacedl
-end  do
+! exponential grid
+theta = 2.3
+call expo_grid(n,xl,x(1),x(factor*n),theta)
 
 ! calculating utilities
 do i=1,factor*n
     y1(i) = util1(x(i))
-    !print *, 'utility in consumption', x(i), 'is', y(i)
+    y2(i) = util2(x(i))
+    y3(i) = util3(x(i),alpha)
 end do
-
 do i=1,n
     yl1(i) = util1(xl(i))
-    !print *, 'utility in consumption', xl(i), 'is', yl1(i)
-end do
-
-do i=1,factor*n
-    y2(i) = util2(x(i))
-    !print *, 'utility in consumption', x(i), 'is', y(i)
-end do
-
-do i=1,n
     yl2(i) = util2(xl(i))
-    !print *, 'utility in consumption', xl(i), 'is', yl1(i)
-end do
-
-do i=1,factor*n
-    y3(i) = util3(x(i),alpha)
-    !print *, 'utility in consumption', x(i), 'is', y(i)
-end do
-
-do i=1,n
     yl3(i) = util3(xl(i),alpha)
-    !print *, 'utility in consumption', xl(i), 'is', yl1(i)
 end do
 
 ! doing the interpolation
 ! log
-call spline(xl,yl1,n,1/xl(1),1/xl(n),yx1)
-call splint(xl,yl1,yx1,n,x,int1)
+do i=1,factor*n
+    if (natural == 1) then
+        call spline(xl,yl1,n,nat,nat,yx1)
+        else
+        call spline(xl,yl1,n,1/xl(1),1/xl(n),yx1)
+    endif
+    call splint(xl,yl1,yx1,n,x(i),int1(i))
+    dif = ABS(ABS(int1(i)-y1(i))/y1(i))*100
+    if (dif > maxd) then
+        maxd = dif
+        err = i
+    endif
+end do
 
 print *, 'log'
-!do i=1,factor*n
-!    dif = ABS(int1(i)-y1(i))
-!    print *, 'difference between interpolation and real utility is', dif
-!end do
-print *, 'maximum difference between interpolation and real utility is', MAXVAL(ABS(int1-y1))
+print *, 'maximum difference between interpolation and real utility is', maxd
+print *, 'in x = ',x(err),'interpolated is', int1(err),' and actual is', y1(err)
+print *, 'interpolated in the end is', int1(factor*n),' and actual is', y1(factor*n)
+maxd = 0.
 
 ! sqrt
-call spline(xl,yl2,n,0.5*xl(1)**(-0.5),0.5*xl(n)**(-0.5),yx2)
-call splint(xl,yl2,yx2,n,x,int2)
+do i=1,factor*n
+    if (natural == 1) then
+        call spline(xl,yl2,n,nat,nat,yx2)
+        else
+        call spline(xl,yl2,n,0.5*xl(1)**(-0.5),0.5*xl(n)**(-0.5),yx2)
+    endif
+    call splint(xl,yl2,yx2,n,x(i),int2(i))
+    dif = ABS(ABS(int2(i)-y2(i))/y2(i))*100
+    if (dif > maxd) then
+        maxd = dif
+        err = i
+    endif
+end do
 
 print *, 'sqrt'
-!do i=1,factor*n
-!    dif = ABS(int2(i)-y2(i))
-!    print *, 'difference between interpolation and real utility is', dif
-!end do
-print *, 'maximum difference between interpolation and real utility is', MAXVAL(ABS(int2-y2))
+print *, 'maximum difference between interpolation and real utility is', maxd
+print *, 'in x = ',x(err),'interpolated is', int2(err),' and actual is', y2(err)
+print *, 'interpolated in the end is', int2(factor*n),' and actual is', y2(factor*n)
+maxd = 0.
 
 ! crra
-call spline(xl,yl3,n,xl(1)**(-alpha),xl(n)**(-alpha),yx3)
-call splint(xl,yl3,yx3,n,x,int3)
+do i=1,factor*n
+    if (natural == 1) then
+        call spline(xl,yl3,n,nat,nat,yx3)
+        else
+        call spline(xl,yl3,n,xl(1)**(-alpha),xl(n)**(-alpha),yx3)
+    endif
+    call splint(xl,yl3,yx3,n,x(i),int3(i))
+    dif = ABS(ABS(int3(i)-y3(i))/y3(i))*100
+    if (dif > maxd) then
+        maxd = dif
+        err = i
+    endif
+end do
 
 print *, 'crra'
-!do i=1,factor*n
-!    dif = ABS(int3(i)-y3(i))
-!    print *, 'difference between interpolation and real utility is', dif
-!end do
-print *, 'maximum difference between interpolation and real utility is', MAXVAL(ABS(int3-y3))
+print *, 'maximum difference between interpolation and real utility is', maxd
+print *, 'in x = ',x(err),'interpolated is', int3(err),' and actual is', y3(err)
+print *, 'interpolated in the end is', int3(factor*n),' and actual is', y3(factor*n)
+
+open (unit=out_unit,file="log.csv",action="write",status="replace")
+write (out_unit,*) y1
+write (out_unit,*) int1
+close (out_unit)
+
+open (unit=out_unit,file="sqrt.csv",action="write",status="replace")
+write (out_unit,*) y2
+write (out_unit,*) int2
+close (out_unit)
+
+open (unit=out_unit,file="crra.csv",action="write",status="replace")
+write (out_unit,*) y3
+write (out_unit,*) int3
+close (out_unit)
 
 end program main

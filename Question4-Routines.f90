@@ -226,3 +226,25 @@ FUNCTION chebev(a,b,c,m,x)
     chebev = y*d-dd+0.5*c(1)  ! Last step is different
     return
 END
+
+!! BONUS: exponential grid
+
+SUBROUTINE expo_grid(points, grid_x, start, finish, theta) 
+    implicit none
+    integer points, i
+    double precision :: grid_x(points),start, finish,theta, equally_spaced
+    double precision :: grid_x_hat(points),n
+        
+    n = REAL(points)
+    equally_spaced=(1.0)/(n-1)
+    grid_x_hat(1)=0.0
+   
+    do  i=2,points
+        grid_x_hat(i) = grid_x_hat(i-1)+ equally_spaced
+    end  do
+        
+    do  i=1,points
+        grid_x(i) = start+(finish-start)*(grid_x_hat(i)**theta)
+    end  do  
+    
+end SUBROUTINE expo_grid
