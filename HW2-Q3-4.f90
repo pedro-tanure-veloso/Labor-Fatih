@@ -1,3 +1,41 @@
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!DEFINE THE G FUNCTION !!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!Change this to find for a different function
+
+
+double precision function func_g(p)
+    IMPLICIT NONE
+    double precision ans, p
+
+    ans=.5*(p**(-.5)+p**(-.2))
+
+    func_g=ans
+
+END function func_g
+
+
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!DEFINE THE F FUNCTION !!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!Makes the problem about finding a root 
+!!Not necessary but useful 
+
+
+double precision function func_f(p,target_value)
+    IMPLICIT NONE
+    double precision ans, p,target_value
+    double precision, external :: func_g
+    ans=func_g(p)-target_value                
+
+    func_f=ans
+
+END function func_f
+
+
+
+
 double precision function g(p)
     implicit none
     double precision p
@@ -13,6 +51,104 @@ double precision function diff(p,target_value)
     diff = .5*p**(-0.5)+.5*p**(-0.2) - target_value
     
 end function diff
+
+
+
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!DERIVATIVE FUNCTION!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+double precision function derive_double_sided(x,f,target_v)
+
+    IMPLICIT NONE
+    double precision x, eps, g_at_x,g_at_x_eps, deriv,target_v
+    double precision, external :: f
+
+    eps=10.0**(-7.0)
+    g_at_x= f(x-eps,target_v)
+    g_at_x_eps= f(x+eps,target_v)
+    deriv=(g_at_x_eps-g_at_x)/(2.0*eps)
+
+
+
+    derive_double_sided=deriv
+    
+END function derive_double_sided
+
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!Newton  Method!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+
+
+SUBROUTINE Newton(tol,start,iterations,x_hat,target_value,f)
+
+    IMPLICIT NONE
+    
+    integer iterations
+    double precision tol,start,x_hat,current_x,f_current_x,target_value,f_prime_current_x
+    double precision, external :: f
+    double precision, external :: derive_double_sided
+    
+   
+        
+        
+    current_x=start         
+    
+    
+    
+    f_current_x=f(current_x,target_value)
+    
+    
+    
+    f_prime_current_x=derive_double_sided(current_x,f,0.0)
+    
+    
+    
+    
+    iterations=0                                  
+    
+    
+    
+    do while(abs(f_current_x)>tol)            !while its not close enough to zer0
+        
+       
+        iterations=iterations+1                  !update the iteration
+        
+        current_x=current_x-(f_current_x/f_prime_current_x)
+      
+        f_current_x=f(current_x,target_value)
+    
+        f_prime_current_x=derive_double_sided(current_x,f,0.0)
+        
+    
+    end do  
+
+
+    print *, "Closest estimate for p is:", current_x
+    print *, "Number of iterations required to reach goal is:", iterations
+
+
+    x_hat=current_x                              !return the answer 
+
+
+
+
+
+END SUBROUTINE Newton
+
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!Bisection  Method!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!Will take mid point of the two extremes and until it gets close enough to the root
+
+
+
+
 
 subroutine bissection(func,ftarget,x1,x2,tol,x3,it)
     implicit none
@@ -43,6 +179,12 @@ subroutine bissection(func,ftarget,x1,x2,tol,x3,it)
     print *, "Number of iterations required to reach goal is:", it
 end subroutine bissection
 
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!Secant  Method!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
 subroutine secant(func,ftarget,x1,x2,x3,tol,it)
     implicit none
     external func
@@ -72,6 +214,12 @@ subroutine secant(func,ftarget,x1,x2,x3,tol,it)
     
     
 end subroutine secant
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!Brent  Method!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
 
 subroutine brent(func,ftarget,x1,x2,x3,tol,it)
 
@@ -162,32 +310,44 @@ subroutine brent(func,ftarget,x1,x2,x3,tol,it)
 end subroutine brent
 
 ! Starting the program
-program Q3_4
-
-implicit none
-integer it
-double precision, external:: g,diff
-double precision x1,x2,x3,x4,x5,ftarget,tol
-
-tol = 10**(-6)
-! Initial guesses: make sure x1<x2!
-x1 = 0.1
-x2 = 3.
-! Targets
-ftarget = 0.75
-
-!! Applying the methods
-! Bisection
-print *, "Bissection method"
-call bissection(diff,ftarget,x1,x2,tol,x3,it)
-
-! Secant
-print *, "Secant method"
-call secant(diff,ftarget,x1,x2,x4,tol,it)
-
-! Brent's method
-print *, "Brent's method"
-call brent(diff,ftarget,x1,x2,x5,tol,it)
 
 
-end program Q3_4
+
+
+program main
+
+    implicit none
+    integer it
+    double precision, external:: g,diff
+    double precision, external :: func_f
+    double precision x1,x2,x3,x4,x5,ftarget
+    double precision tol,start,ending,x_hat,target_value
+
+
+    tol = 10**(-6)
+    ! Initial guesses: make sure x1<x2!
+    x1 = 0.1
+    x2 = 3.
+    ! Targets
+    ftarget = 0.75
+    
+
+    !! Applying the methods
+    ! Bisection
+    print *, "Bissection method"
+    call bissection(diff,ftarget,x1,x2,tol,x3,it)
+
+    ! Secant
+    print *, "Secant method"
+    call secant(diff,ftarget,x1,x2,x4,tol,it)
+
+    ! Brent's method
+    print *, "Brent's method"
+    call brent(diff,ftarget,x1,x2,x5,tol,it)
+    
+   ! Newton's method
+    print *, " Newton's method"
+    call  Newton(tol,x2,it,x_hat,ftarget,func_f)
+
+
+end program main
